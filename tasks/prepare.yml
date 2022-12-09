@@ -75,7 +75,7 @@
     that:
       - php_version is defined
       - php_version is version_compare('7', '>=')
-      - php_version is version_compare('8', '<')
+      - php_version is version_compare('8.2', '<')
     msg: "This role only works with PHP >= 7.0 and < 8.x .. found: {{ php_version }}"
 
 - name: arch specific
