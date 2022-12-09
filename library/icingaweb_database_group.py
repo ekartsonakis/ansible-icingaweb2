@@ -290,6 +290,7 @@ class IcingaWeb2DatabaseGroup(object):
             q = q.format(groupname, self.parent)
 
         try:
+            warnings.filterwarnings('ignore', category=mysql_driver.Warning)
             cursor.execute(q)
             conn.commit()
         except Exception as e:
@@ -336,27 +337,27 @@ class IcingaWeb2DatabaseGroup(object):
         if self.members:
             group_id = self.__delete_all_members(groupname)
 
-            cursor, conn, error, message = self.__mysql_connect()
-
-            if error:
-                return None, error, message
 
             if group_id:
                 for member in self.members:
                     queries.append(
-                        "insert into icingaweb_group_membership (group_id, username, ctime, mtime) values ({}, '{}', now(), now())".format(group_id, member)
+                        "insert ignore into icingaweb_group_membership (group_id, username, ctime, mtime) values ('{}', '{}', now(), now())".format(group_id, member)
                     )
 
             for q in queries:
                 try:
+                    cursor, conn, error, message = self.__mysql_connect()
+                    if error:
+                        return None, error, message
                     cursor.execute(q)
+                    conn.commit()
 
                 except Exception as e:
                     conn.rollback()
                     self.module.fail_json(msg="Cannot execute SQL '{}' : {}".format(q, to_native(e)))
-
-                conn.commit()
-                conn.close()
+                finally:
+                    cursor.close()
+                
         else:
             _ = self.__delete_all_members(groupname)
 
